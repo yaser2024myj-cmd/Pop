@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jujutsu Potato - Stickman JJS Fighting Evolution</title>
+    <style>
+        :root {
+            --bg-color: #050508;
+            --panel-bg: rgba(15, 15, 25, 0.95);
+            --primary: #ff0055;
+            --secondary: #00f0ff;
+            --accent: #ffd700;
+            --black-flash: #ff0000;
+            --text-color: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: #0d0d13;
+        }
+
+        /* Screens & UI */
+        .ui-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(5, 5, 10, 0.88);
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        h1.title {
+            font-size: 3rem;
+            color: var(--primary);
+            text-shadow: 0 0 20px rgba(255, 0, 85, 0.7);
+            margin-bottom: 5px;
+            letter-spacing: 2px;
+        }
+
+        p.subtitle {
+            font-size: 1.1rem;
+            color: var(--secondary);
+            margin-bottom: 25px;
+        }
+
+        .lang-select-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 20;
+        }
+
+        select.lang-dropdown {
+            background: var(--panel-bg);
+            color: #fff;
+            border: 1px solid var(--secondary);
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 300px;
+        }
+
+        button.main-btn {
+            background: linear-gradient(45deg, var(--primary), #b3003b);
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 0, 85, 0.4);
+            transition: all 0.2s ease;
+        }
+
+        button.main-btn.secondary-btn {
+            background: linear-gradient(45deg, #0088cc, var(--secondary));
+            box-shadow: 0 4px 15px rgba(0, 240, 255, 0.3);
+        }
+
+        button.main-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.2);
+        }
+
+        .modal-box {
+            background: var(--panel-bg);
+            border: 2px solid var(--primary);
+            border-radius: 16px;
+            padding: 25px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.9);
+        }
+
+        .grid-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .grid-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+        .grid-btn:hover {
+            background: var(--primary);
+        }
+
+        .shop-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .shop-card {
+            background: rgba(20, 20, 35, 0.9);
+            border: 1px solid var(--secondary);
+            border-radius: 10px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+        }
+
+        /* HUD Overlay */
+        #game-hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .respawn-timer-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.7);
+            border: 1px solid var(--primary);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #fff;
+            z-index: 5;
+        }
+
+        .touch-controls {
+            position: absolute;
+            bottom: 25px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 25px;
+            pointer-events: auto;
+        }
+
+        .control-btn {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid #fff;
+            color: white;
+            font-size: 1rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .ult-active {
+            background: radial-gradient(circle, #ff0000, #000) !important;
+            border-color: var(--accent) !important;
+            box-shadow: 0 0 20px #ff0000;
+            animation: pulse 0.5s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.15); }
+        }
+
+        #fx-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 4;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <canvas id="fx-canvas"></canvas>
+
+        <!-- Language Selector -->
+        <div class="lang-select-container">
+            <select id="langSelect" class="lang-dropdown" onchange="changeLanguage(this.value)">
+                <option value="ar">العربية (Arabic)</option>
+                <option value="en">English</option>
+                <option value="ja">日本語 (Japanese)</option>
+                <option value="es">Español</option>
+            </select>
+        </div>
+
+        <!-- Main Menu -->
+        <div id="main-menu" class="ui-screen">
+            <h1 class="title">JUJUTSU POTATO</h1>
+            <p class="subtitle" data-i18n="subtitle">STICKMAN JJS FIGHTING EVOLUTION</p>
+            
+            <div class="btn-group">
+                <button class="main-btn" id="btn-start" onclick="openModeSelect()" data-i18n="start_fight">ابدأ المواجهة</button>
+                <button class="main-btn secondary-btn" id="btn-online" onclick="openOnlineMenu()" data-i18n="play_online">لعب أونلاين</button>
+                <button class="main-btn secondary-btn" id="btn-shop" style="background: linear-gradient(45deg, #e67e22, #f1c40f);" onclick="openShop()" data-i18n="shop">المتجر</button>
+            </div>
+        </div>
+
+        <!-- Mode Select Modal -->
+        <div id="mode-modal" class="ui-screen hidden">
+            <div class="modal-box">
+                <h2 data-i18n="select_mode">اختر طور القتال</h2>
+                <div class="btn-group" style="width:100%; margin-top:15px;">
+                    <button class="main-btn" onclick="startScoreRecord()" data-i18n="score_record">Score Record</button>
+                    <button class="main-btn" onclick="openWaveDifficulty()" data-i18n="wave_survival">Wave Survival</button>
+                    <button class="main-btn" onclick="openBossSelect()" data-i18n="boss_mode">Boss Mode</button>
+                    <button class="grid-btn" onclick="closeModals()" data-i18n="back">الرجوع</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wave Difficulty Modal -->
+        <div id="wave-diff-modal" class="ui-screen hidden">
+            <div class="modal-box">
+                <h2 data-i18n="select_difficulty">اختر مستوى الصعوبة</h2>
+                <div class="btn-group" style="width:100%; margin-top:15px;">
+                    <button class="main-btn" onclick="startWaves('easy')" data-i18n="diff_easy">Easy (5 الموجة 5: Normal)</button>
+                    <button class="main-btn" onclick="startWaves('normal')" data-i18n="diff_normal">Normal (10 الموجات 5 و 10: Hard)</button>
+                    <button class="main-btn" onclick="startWaves('hard')" data-i18n="diff_hard">Hard (20 الموجات 5,10,15,20: Nightmare)</button>
+                    <button class="grid-btn" onclick="openModeSelect()" data-i18n="back">الرجوع</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Boss Select Modal -->
+        <div id="boss-modal" class="ui-screen hidden">
+            <div class="modal-box">
+                <h2 data-i18n="select_boss">اختر البوس لمواجهته</h2>
+                <div class="grid-options" id="boss-list"></div>
+                <button class="grid-btn" onclick="openModeSelect()" data-i18n="back">الرجوع</button>
+            </div>
+        </div>
+
+        <!-- Shop Modal -->
+        <div id="shop-modal" class="ui-screen hidden">
+            <div class="modal-box" style="max-width: 600px;">
+                <h2 data-i18n="shop_title">متجر الشخصيات</h2>
+                <div class="shop-grid" id="shop-items"></div>
+                <button class="grid-btn" style="margin-top:15px;" onclick="closeModals()" data-i18n="back">الرجوع</button>
+            </div>
+        </div>
+
+        <!-- Online Voting Modal -->
+        <div id="online-modal" class="ui-screen hidden">
+            <div class="modal-box">
+                <h2 data-i18n="online_vote">التصويت على طور القتال (أونلاين)</h2>
+                <p style="margin: 10px 0;" data-i18n="vote_desc">صوّت لاختيار الطور مع بقية اللاعبين:</p>
+                <div class="btn-group" style="width:100%;">
+                    <button class="main-btn" onclick="voteAndStart('Score Record')">Score Record</button>
+                    <button class="main-btn" onclick="voteAndStart('Wave Defense')">Wave Defense</button>
+                    <button class="main-btn" onclick="voteAndStart('Boss Raid')">Boss Raid</button>
+                    <button class="grid-btn" onclick="closeModals()" data-i18n="back">الرجوع</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over / Victory Modal -->
+        <div id="gameover-modal" class="ui-screen hidden">
+            <div class="modal-box">
+                <h2 id="gameover-title">انتهاء المواجهة</h2>
+                <p id="gameover-stats" style="margin: 15px 0;"></p>
+                <div class="btn-group" style="width:100%;">
+                    <button class="main-btn" id="retry-btn" onclick="retryCurrentMode()" data-i18n="retry">إعادة اللعب</button>
+                    <button class="main-btn secondary-btn" id="lobby-btn" onclick="returnToLobby()" data-i18n="lobby">العودة للوبي</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- HUD & Touch Controls -->
+        <div id="game-hud" class="hidden">
+            <div id="respawn-hud" class="respawn-timer-container hidden">
+                إعادة الظهور بعد: <span id="respawn-time">30</span> ثانية
+            </div>
+            <div class="touch-controls">
+                <div style="display:flex; gap:10px;">
+                    <div class="control-btn" onclick="handleMove('left')">◄</div>
+                    <div class="control-btn" onclick="handleMove('right')">►</div>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <div class="control-btn" onclick="triggerSkill('m1')">M1</div>
+                    <div class="control-btn" id="skill-btn" onclick="triggerSkill('skill')">Skill</div>
+                    <div class="control-btn" id="ult-btn" onclick="triggerSkill('ult')" style="border-color:var(--accent);">ULT</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const translations = {
+            ar: {
+                subtitle: "قتال العصي والقدرات - النسخة المطورة",
+                start_fight: "ابدأ المواجهة",
+                play_online: "لعب أونلاين",
+                shop: "المتجر",
+                select_mode: "اختر طور القتال",
+                score_record: "Score Record",
+                wave_survival: "Wave Survival",
+                boss_mode: "Boss Mode",
+                select_difficulty: "اختر مستوى الصعوبة",
+                diff_easy: "سهل Easy (5 موجات)",
+                diff_normal: "عادي Normal (10 موجات)",
+                diff_hard: "صعب Hard (20 موجة)",
+                select_boss: "اختر البوس لمواجهته",
+                shop_title: "متجر الشخصيات",
+                online_vote: "التصويت على طور القتال (أونلاين)",
+                vote_desc: "صوّت لاختيار الطور مع بقية اللاعبين:",
+                retry: "إعادة اللعب",
+                lobby: "العودة للوبي",
+                back: "الرجوع"
+            },
+            en: {
+                subtitle: "STICKMAN JJS FIGHTING EVOLUTION",
+                start_fight: "Start Fight",
+                play_online: "Play Online",
+                shop: "Shop",
+                select_mode: "Select Gamemode",
+                score_record: "Score Record",
+                wave_survival: "Wave Survival",
+                boss_mode: "Boss Mode",
+                select_difficulty: "Select Difficulty",
+                diff_easy: "Easy (5 Waves)",
+                diff_normal: "Normal (10 Waves)",
+                diff_hard: "Hard (20 Waves)",
+                select_boss: "Select Boss",
+                shop_title: "Character Shop",
+                online_vote: "Vote Gamemode (Online)",
+                vote_desc: "Vote mode with players:",
+                retry: "Retry",
+                lobby: "Return to Lobby",
+                back: "Back"
+            }
+        };
+
+        function changeLanguage(lang) {
+            document.documentElement.dir = (lang === 'ar') ? 'rtl' : 'ltr';
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang] && translations[lang][key]) {
+                    el.innerText = translations[lang][key];
+                }
+            });
+        }
+
+        const characters = [
+            { id: 'itadori', name: 'Itadori Yuji', price: 0, skill: 'Counter', ult: 'Black Flash', unlocked: true },
+            { id: 'megumi', name: 'Megumi Fushiguro', price: 500, skill: 'Divine Dog', ult: 'Mahoraga Summon', unlocked: true },
+            { id: 'todo', name: 'Aoi Todo', price: 750, skill: 'Boogie Woogie', ult: 'Brother Combo', unlocked: true },
+            { id: 'choso', name: 'Choso', price: 1000, skill: 'Piercing Blood', ult: 'Supernova', unlocked: true }
+        ];
+
+        const bossesList = [
+            'Sukuna (4 Arms)', 'Gojo (Unsealed)', 'Kenjaku', 'Mahito (Final Form)', 
+            'Jogo', 'Hanami', 'Dagon', 'Toji Fushiguro', 'Uraume', 'Kashimo', 'Ryu Ishigori'
+        ];
+
+        let isOnline = false;
+        let selectedChar = 'itadori';
+        let isMaxBlackFlashReady = false;
+        let respawnInterval = null;
+
+        function closeModals() {
+            document.querySelectorAll('.ui-screen').forEach(s => {
+                if (s.id !== 'main-menu') s.classList.add('hidden');
+            });
+        }
+
+        function openModeSelect() {
+            isOnline = false;
+            closeModals();
+            document.getElementById('mode-modal').classList.remove('hidden');
+        }
+
+        function openWaveDifficulty() {
+            closeModals();
+            document.getElementById('wave-diff-modal').classList.remove('hidden');
+        }
+
+        function openBossSelect() {
+            closeModals();
+            const listContainer = document.getElementById('boss-list');
+            listContainer.innerHTML = '';
+            bossesList.forEach(boss => {
+                const btn = document.createElement('button');
+                btn.className = 'grid-btn';
+                btn.innerText = boss;
+                btn.onclick = () => launchGameUI();
+                listContainer.appendChild(btn);
+            });
+            document.getElementById('boss-modal').classList.remove('hidden');
+        }
+
+        function openShop() {
+            closeModals();
+            const shopContainer = document.getElementById('shop-items');
+            shopContainer.innerHTML = '';
+            characters.forEach(char => {
+                const card = document.createElement('div');
+                card.className = 'shop-card';
+                card.innerHTML = `
+                    <h3>${char.name}</h3>
+                    <p>Skill: ${char.skill}</p>
+                    <button class="grid-btn" style="width:100%;" onclick="selectChar('${char.id}')">
+                        ${selectedChar === char.id ? 'محدد حالياً' : 'اختيار'}
+                    </button>
+                `;
+                shopContainer.appendChild(card);
+            });
+            document.getElementById('shop-modal').classList.remove('hidden');
+        }
+
+        function selectChar(id) {
+            selectedChar = id;
+            openShop();
+        }
+
+        function openOnlineMenu() {
+            isOnline = true;
+            closeModals();
+            document.getElementById('online-modal').classList.remove('hidden');
+        }
+
+        function voteAndStart(mode) {
+            closeModals();
+            launchGameUI();
+        }
+
+        function launchGameUI() {
+            closeModals();
+            document.getElementById('main-menu').classList.add('hidden');
+            document.getElementById('game-hud').classList.remove('hidden');
+            initCanvas();
+        }
+
+        function playerDiedOnline() {
+            if (!isOnline) return;
+            const respawnHUD = document.getElementById('respawn-hud');
+            const respawnText = document.getElementById('respawn-time');
+            respawnHUD.classList.remove('hidden');
+            let timeLeft = 30;
+            respawnText.innerText = timeLeft;
+
+            clearInterval(respawnInterval);
+            respawnInterval = setInterval(() => {
+                timeLeft--;
+                respawnText.innerText = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(respawnInterval);
+                    respawnHUD.classList.add('hidden');
+                }
+            }, 1000);
+        }
+
+        function returnToLobby() {
+            closeModals();
+            document.getElementById('game-hud').classList.add('hidden');
+            if (isOnline) {
+                openOnlineMenu();
+            } else {
+                document.getElementById('main-menu').classList.remove('hidden');
+            }
+        }
+
+        function retryCurrentMode() {
+            closeModals();
+            launchGameUI();
+        }
+
+        // Canvas & Animations Engine
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const fxCanvas = document.getElementById('fx-canvas');
+        const fxCtx =
